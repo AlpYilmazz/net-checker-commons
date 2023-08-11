@@ -1,4 +1,6 @@
-use bson::{oid::ObjectId, Bson, Document, doc};
+use std::collections::HashMap;
+
+use bson::{doc, oid::ObjectId, Bson, Document};
 use serde::{Deserialize, Serialize};
 
 use crate::MonitorConfiguration;
@@ -22,7 +24,7 @@ pub struct Worker {
     pub work_count: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum MonitorType {
     PING,
     HTTP,
@@ -55,19 +57,30 @@ impl From<&MonitorConfiguration> for MonitorType {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct HealthMonitorConfiguration {
+pub struct HealthMonitor {
     pub _id: ObjectId,
     pub client_id: String,
     pub monitor_type: MonitorType,
     pub running: bool,
+    pub workers: Vec<String>,
+    // pub configuration: MonitorConfiguration, // TODO
 }
 
-impl HealthMonitorConfiguration {
-    pub fn as_insert_doc(client_id: &str, monitor_type: MonitorType) -> Document {
+// TODO: is there a better way
+//       to insert doc without _id
+impl HealthMonitor {
+    pub fn as_insert_doc(
+        client_id: &str,
+        monitor_type: MonitorType,
+        workers: &[&str],
+        configuration: &MonitorConfiguration,
+    ) -> Document {
         doc! {
             "client_id": client_id,
             "monitor_type": monitor_type,
             "running": true,
+            "workers": workers.iter().map(|w| w.to_string()).collect::<Vec<_>>(),
+            // "configuration": configuration.clone(), // TODO
         }
     }
 }
