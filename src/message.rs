@@ -1,4 +1,4 @@
-use pulsar::{DeserializeMessage, Payload};
+use pulsar::{DeserializeMessage, Payload, SerializeMessage};
 use serde::{Deserialize, Serialize};
 
 use crate::{MonitorConfiguration, MonitorTimingSettings};
@@ -9,6 +9,17 @@ pub enum MonitorMessage {
     Pause(PauseMonitorMessage),
     Resume(ResumeMonitorMessage),
     Kill(KillMonitorMessage),
+}
+
+impl SerializeMessage for MonitorMessage {
+    fn serialize_message(input: Self) -> Result<pulsar::producer::Message, pulsar::Error> {
+        let payload =
+            serde_json::to_vec(&input).map_err(|e| pulsar::Error::Custom(e.to_string()))?;
+        Ok(pulsar::producer::Message {
+            payload,
+            ..Default::default()
+        })
+    }
 }
 
 impl DeserializeMessage for MonitorMessage {
